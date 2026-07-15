@@ -14,19 +14,26 @@ BOARD_SIZE = 4
 LAYER_COUNT = 4
 CELL_COUNT = BOARD_SIZE * BOARD_SIZE * LAYER_COUNT
 
+BOARD_CARD_STEP = 116
+BOARD_CARD_MARGIN = 10
+BOARD_CELL_GAP = 2
+BOARD_CELL_FONT_SIZE = 10
+BOARD_CELL_WIDTH = 2
+BOARD_CELL_HEIGHT = 1
+
 APP_BG = "#0f172a"
 PANEL_BG = "#111827"
-CARD_BG = "#1f2937"
-CARD_EDGE = "#334155"
-TEXT_MAIN = "#e5e7eb"
+CARD_BG = "#1e293b"
+CARD_EDGE = "#38bdf8"
+TEXT_MAIN = "#e2e8f0"
 TEXT_DIM = "#94a3b8"
-ACCENT_A = "#22c55e"
+ACCENT_A = "#06b6d4"
 ACCENT_B = "#38bdf8"
 MOVE_X = "#fb7185"
 MOVE_O = "#60a5fa"
-CELL_IDLE = "#243042"
-CELL_IDLE_HOVER = "#2f3d55"
-CELL_WIN = "#f59e0b"
+CELL_IDLE = "#1e293b"
+CELL_IDLE_HOVER = "#263548"
+CELL_WIN = "#0ea5e9"
 
 
 def build_winning_lines():
@@ -113,8 +120,8 @@ class SpatialTicTacToeApp:
             header,
             text="Conectando...",
             font=("Segoe UI Semibold", 10),
-            fg="#dbeafe",
-            bg="#1d4ed8",
+            fg="#e0f2fe",
+            bg=ACCENT_B,
             padx=14,
             pady=8,
         )
@@ -152,8 +159,8 @@ class SpatialTicTacToeApp:
             sidebar,
             text="Turno: pendiente",
             font=("Segoe UI Semibold", 11),
-            fg="#dcfce7",
-            bg="#14532d",
+            fg="#e0f2fe",
+            bg="#0f766e",
             padx=12,
             pady=8,
         )
@@ -187,8 +194,8 @@ class SpatialTicTacToeApp:
             text="Nuevo tablero",
             font=("Segoe UI Semibold", 11),
             fg="#ecfeff",
-            bg="#0f766e",
-            activebackground="#115e59",
+            bg="#155e75",
+            activebackground="#0f766e",
             activeforeground="#ecfeff",
             relief="flat",
             bd=0,
@@ -202,10 +209,10 @@ class SpatialTicTacToeApp:
             sidebar,
             text="Salir",
             font=("Segoe UI Semibold", 11),
-            fg="#fff7ed",
-            bg="#b91c1c",
-            activebackground="#991b1b",
-            activeforeground="#fff7ed",
+            fg="#f8fafc",
+            bg="#1d4ed8",
+            activebackground="#1e40af",
+            activeforeground="#f8fafc",
             relief="flat",
             bd=0,
             padx=14,
@@ -218,20 +225,19 @@ class SpatialTicTacToeApp:
         board_shell.pack(fill="both", expand=True)
 
         self.layer_cards = []
-        layer_positions = [(0, 0), (0, 1), (1, 0), (1, 1)]
-        for z, (row, column) in zip(range(LAYER_COUNT - 1, -1, -1), layer_positions):
+        for z in range(LAYER_COUNT):
+            x_offset = z * BOARD_CARD_STEP
+            y_offset = (LAYER_COUNT - 1 - z) * BOARD_CARD_STEP
             card = tk.Frame(
                 board_shell,
                 bg=CARD_BG,
                 highlightthickness=1,
                 highlightbackground=CARD_EDGE,
                 bd=0,
-                padx=10,
-                pady=10,
+                padx=BOARD_CARD_MARGIN,
+                pady=BOARD_CARD_MARGIN,
             )
-            card.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
-            board_shell.grid_rowconfigure(row, weight=1)
-            board_shell.grid_columnconfigure(column, weight=1)
+            card.place(x=x_offset, y=y_offset)
 
             tk.Label(
                 card,
@@ -250,23 +256,27 @@ class SpatialTicTacToeApp:
                     button = tk.Button(
                         grid,
                         text="",
-                        width=4,
-                        height=2,
-                        font=("Segoe UI Semibold", 14, "bold"),
+                        width=BOARD_CELL_WIDTH,
+                        height=BOARD_CELL_HEIGHT,
+                        font=("Segoe UI Semibold", BOARD_CELL_FONT_SIZE, "bold"),
                         fg=TEXT_MAIN,
                         bg=CELL_IDLE,
                         activebackground=CELL_IDLE_HOVER,
                         activeforeground=TEXT_MAIN,
                         relief="flat",
                         bd=0,
-                        highlightthickness=0,
+                        highlightthickness=1,
+                        highlightbackground=CARD_EDGE,
+                        highlightcolor=CARD_EDGE,
+                        padx=0,
+                        pady=0,
                         command=lambda cell=index: self.handle_cell_click(cell),
                     )
-                    button.grid(row=y, column=x, padx=5, pady=5, sticky="nsew")
+                    button.grid(row=y, column=x, padx=BOARD_CELL_GAP, pady=BOARD_CELL_GAP)
                     button.bind("<Enter>", lambda _event, widget=button: self._hover_cell(widget, True))
                     button.bind("<Leave>", lambda _event, widget=button: self._hover_cell(widget, False))
-                    grid.grid_rowconfigure(y, weight=1)
-                    grid.grid_columnconfigure(x, weight=1)
+                    grid.grid_rowconfigure(y, weight=0)
+                    grid.grid_columnconfigure(x, weight=0)
                     self.cell_buttons[index] = button
 
         footer = tk.Frame(self.root, bg=APP_BG)
@@ -483,7 +493,7 @@ class SpatialTicTacToeApp:
     def _paint_win_line(self, line):
         for z, y, x in line:
             index = z * 16 + y * 4 + x
-            self.cell_buttons[index].configure(bg=CELL_WIN, fg="#111827")
+            self.cell_buttons[index].configure(bg=CELL_WIN, fg="#0f172a")
 
     def _board_is_full(self):
         for layer in self.board_state:
