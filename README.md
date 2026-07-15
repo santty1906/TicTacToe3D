@@ -1,6 +1,6 @@
-# Nebula 4x4x4 Arena
+#4x4x4 TicTacToe
 
-Nebula 4x4x4 Arena es un juego multijugador de TicTacToe tridimensional hecho con Python, Tkinter y WebSockets. La idea es simple: dos personas abren el cliente, se conectan al mismo servidor y juegan sobre un tablero de 4x4x4 completamente sincronizado en tiempo real.
+4x4x4 TicTacToe es un juego multijugador de TicTacToe tridimensional hecho con Python, Tkinter y WebSockets. La idea es simple: dos personas abren el cliente, se conectan al mismo servidor y juegan sobre un tablero de 4x4x4 completamente sincronizado en tiempo real.
 
 ## Qué incluye
 
