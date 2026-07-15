@@ -9,7 +9,7 @@ from tkinter import messagebox
 import websockets
 
 
-SERVER_URL = "wss://tu-servidor-aqui.onrender.com"
+SERVER_URL = "wss://tictactoe3d-server.onrender.com"
 
 BOARD_SIZE = 4
 LAYER_COUNT = 4
