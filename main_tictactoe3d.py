@@ -1,4 +1,3 @@
-tablero.mainloop()
 import asyncio
 import json
 import queue
