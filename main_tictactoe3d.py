@@ -37,6 +37,12 @@ CELL_WIN = "#0ea5e9"
 
 
 def build_winning_lines():
+    """Genera todas las combinaciones de cuatro celdas que constituyen una victoria.
+
+    En un tablero 4x4x4, una línea ganadora puede vivir dentro de un nivel,
+    cruzar niveles, o recorrer diagonales espaciales. Construirlas una sola vez
+    al inicio evita recalcular la geometría en cada movimiento.
+    """
     lines = []
 
     for z in range(LAYER_COUNT):
@@ -68,7 +74,15 @@ def build_winning_lines():
 
 
 class SpatialTicTacToeApp:
+    """Cliente de escritorio para jugar TicTacToe 3D contra otro jugador remoto.
+
+    La clase concentra tres responsabilidades: construir la interfaz Tkinter,
+    mantener el estado local del tablero y coordinar la comunicación WebSocket
+    con el servidor de partida.
+    """
+
     def __init__(self, root):
+        """Inicializa la ventana, el estado de juego y el hilo de red."""
         self.root = root
         self.root.title("4x4x4 TicTacToe")
         self.root.geometry("1360x860+20+20")
@@ -95,6 +109,7 @@ class SpatialTicTacToeApp:
         self.network_thread.start()
 
     def _build_interface(self):
+        """Construye la interfaz visual completa del cliente."""
         header = tk.Frame(self.root, bg=APP_BG)
         header.pack(fill="x", padx=22, pady=(18, 10))
 
@@ -291,15 +306,18 @@ class SpatialTicTacToeApp:
         ).pack(side="left")
 
     def _hover_cell(self, widget, is_entering):
+        """Aplica un resaltado visual solo a celdas vacías."""
         current_text = widget.cget("text")
         if current_text:
             return
         widget.configure(bg=CELL_IDLE_HOVER if is_entering else CELL_IDLE)
 
     def _launch_network(self):
+        """Arranca el bucle asíncrono de red en un hilo separado."""
         asyncio.run(self._network_main())
 
     async def _network_main(self):
+        """Mantiene la conexión WebSocket y despacha mensajes entrantes."""
         try:
             async with websockets.connect(self.socket_url, ping_interval=20, ping_timeout=20) as socket:
                 sender = asyncio.create_task(self._outbound_pump(socket))
@@ -316,6 +334,7 @@ class SpatialTicTacToeApp:
             self._ui(lambda: self._handle_connection_error(error))
 
     async def _outbound_pump(self, socket):
+        """Envía al servidor los eventos acumulados en la cola de salida."""
         while not self.network_stop.is_set():
             try:
                 payload = self.outbox.get_nowait()
@@ -326,6 +345,7 @@ class SpatialTicTacToeApp:
             await socket.send(json.dumps(payload))
 
     async def _process_server_message(self, raw_message):
+        """Interpreta los eventos enviados por el servidor y actualiza la UI."""
         try:
             message = json.loads(raw_message)
         except json.JSONDecodeError:
@@ -347,20 +367,24 @@ class SpatialTicTacToeApp:
             self._ui(self._handle_remote_disconnect)
 
     def _handle_connection_error(self, error):
+        """Informa al usuario cuando no se puede establecer la conexión."""
         messagebox.showerror("Conexión fallida", f"No fue posible conectar con el servidor:\n{error}")
         self.root.destroy()
 
     def _handle_remote_disconnect(self):
+        """Cierra la partida cuando el oponente abandona la sala."""
         messagebox.showwarning("Partida interrumpida", "El otro jugador abandonó la sala.")
         self.root.destroy()
 
     def _ui(self, callback):
+        """Programa una actualización segura de Tkinter desde el hilo de red."""
         try:
             self.root.after(0, callback)
         except tk.TclError:
             pass
 
     def _accept_seat(self, seat):
+        """Registra el asiento asignado por el servidor y actualiza el estado."""
         self.seat = seat
         self.turn_owner = 0
         self.match_started = False
@@ -371,6 +395,7 @@ class SpatialTicTacToeApp:
         self.status_text.configure(text="Esperando a que se conecte el segundo jugador...")
 
     def _mark_match_started(self):
+        """Marca el inicio de la partida cuando el servidor confirma dos jugadores."""
         self.match_started = True
         self.match_over = False
         self.turn_owner = 0
@@ -378,6 +403,7 @@ class SpatialTicTacToeApp:
         self._refresh_turn_chip()
 
     def _refresh_turn_chip(self):
+        """Actualiza el indicador visual del turno según el estado actual."""
         if self.match_over:
             self.turn_chip.configure(text="Turno: partida cerrada", bg="#7c2d12")
             return
@@ -392,6 +418,7 @@ class SpatialTicTacToeApp:
             self.turn_chip.configure(text="Turno: espera al rival", bg="#1e3a8a")
 
     def _index_to_coords(self, cell_index):
+        """Convierte un índice lineal del tablero en coordenadas 3D."""
         z = cell_index // 16
         remainder = cell_index % 16
         y = remainder // 4
@@ -399,6 +426,7 @@ class SpatialTicTacToeApp:
         return z, y, x
 
     def handle_cell_click(self, cell_index):
+        """Procesa la jugada local si el turno y la celda son válidos."""
         if self.seat is None or not self.match_started or self.match_over:
             return
 
@@ -414,6 +442,7 @@ class SpatialTicTacToeApp:
         self._apply_move(cell_index, remote=False)
 
     def request_restart(self):
+        """Solicita al servidor un reinicio de la partida tras confirmación."""
         answer = messagebox.askyesno("Nuevo tablero", "¿Quieres reiniciar la partida completa?")
         if not answer:
             return
@@ -422,6 +451,7 @@ class SpatialTicTacToeApp:
         self._reset_board(announce=True)
 
     def _reset_board(self, announce=True):
+        """Limpia el tablero y reinicia el estado local de la partida."""
         self.board_state = [[[0 for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)] for _ in range(LAYER_COUNT)]
         self.current_winner_line = []
         self.turn_owner = 0
@@ -440,10 +470,12 @@ class SpatialTicTacToeApp:
         self._refresh_turn_chip()
 
     def _apply_move(self, cell_index, remote=False):
+        """Aplica una jugada al tablero, valida victoria y alterna el turno."""
         z, y, x = self._index_to_coords(cell_index)
         if self.board_state[z][y][x] != 0:
             return
 
+        # Se usa 1 y -1 para que una línea ganadora sume +4 o -4 sin lógica adicional.
         mark_value = 1 if self.turn_owner == 0 else -1
         mark_label = "O" if mark_value == 1 else "X"
         mark_color = MOVE_O if mark_value == 1 else MOVE_X
@@ -482,6 +514,7 @@ class SpatialTicTacToeApp:
             self.status_text.configure(text="Movimiento enviado al servidor.")
 
     def _find_winner_line(self):
+        """Busca si alguna de las líneas ganadoras precomputadas ya quedó completa."""
         for line in self.win_lines:
             total = 0
             for z, y, x in line:
@@ -491,11 +524,13 @@ class SpatialTicTacToeApp:
         return None
 
     def _paint_win_line(self, line):
+        """Resalta en la interfaz las celdas que forman la línea vencedora."""
         for z, y, x in line:
             index = z * 16 + y * 4 + x
             self.cell_buttons[index].configure(bg=CELL_WIN, fg="#0f172a")
 
     def _board_is_full(self):
+        """Comprueba si no quedan celdas vacías en ninguna capa."""
         for layer in self.board_state:
             for row in layer:
                 for cell in row:
@@ -504,15 +539,18 @@ class SpatialTicTacToeApp:
         return True
 
     def _reset_board_visuals(self):
+        """Deja la interfaz en un estado inicial mientras se establece la conexión."""
         self._reset_board(announce=False)
         self.status_text.configure(text="Conectando al servidor...")
 
     def exit_app(self):
+        """Cierra la conexión en curso y destruye la ventana principal."""
         self.network_stop.set()
         self.root.destroy()
 
 
 def main():
+    """Punto de entrada del cliente de escritorio."""
     root = tk.Tk()
     app = SpatialTicTacToeApp(root)
     root.mainloop()
