@@ -70,7 +70,7 @@ def build_winning_lines():
 class SpatialTicTacToeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Nebula 4x4x4 Arena")
+        self.root.title("4x4x4 TicTacToe")
         self.root.geometry("1360x860+20+20")
         self.root.resizable(False, False)
         self.root.configure(bg=APP_BG)
