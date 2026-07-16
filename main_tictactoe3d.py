@@ -103,7 +103,7 @@ class SpatialTicTacToeApp:
 
         tk.Label(
             title_block,
-            text="Nebula 4x4x4 Arena",
+            text="4x4x4 TicTacToe",
             font=("Segoe UI Semibold", 24, "bold"),
             fg=TEXT_MAIN,
             bg=APP_BG,
